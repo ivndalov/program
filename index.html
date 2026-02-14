@@ -30,9 +30,10 @@
                         'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
                         'float': 'float 6s ease-in-out infinite',
                         'heartbeat': 'heartbeat 1.5s ease-in-out infinite',
-                        // НОВІ АНІМАЦІЇ ТУТ:
                         'toast-in': 'toastIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards',
                         'toast-out': 'toastOut 0.5s ease-in forwards',
+                        'spin-slow': 'spin 3s linear infinite',
+                        'breathe': 'breathe 8s ease-in-out infinite',
                     },
                     keyframes: {
                         float: {
@@ -46,7 +47,6 @@
                             '42%': { transform: 'scale(1.1)' },
                             '70%': { transform: 'scale(1)' },
                         },
-                        // НОВІ КЛЮЧОВІ КАДРИ ТУТ:
                         toastIn: {
                             '0%': { opacity: 0, transform: 'translateY(20px)' },
                             '100%': { opacity: 1, transform: 'translateY(0)' },
@@ -54,6 +54,10 @@
                         toastOut: {
                             '0%': { opacity: 1, transform: 'translateY(0)' },
                             '100%': { opacity: 0, transform: 'translateY(-20px)' },
+                        },
+                        breathe: {
+                            '0%, 100%': { transform: 'scale(1)', opacity: '0.3' },
+                            '50%': { transform: 'scale(1.5)', opacity: '0.8' },
                         }
                     }
                 }
@@ -62,7 +66,6 @@
     </script>
 
     <style>
-        /* iOS Fixes */
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
             background-color: #1a0f1f;
@@ -73,12 +76,10 @@
             -webkit-tap-highlight-color: transparent;
             height: 100vh;
             overflow: hidden;
-            /* Враховуємо Safe Area для нових айфонів */
             padding-top: env(safe-area-inset-top);
             padding-bottom: env(safe-area-inset-bottom);
         }
 
-        /* Glassmorphism */
         .glass {
             background: rgba(255, 255, 255, 0.05);
             backdrop-filter: blur(16px);
@@ -95,7 +96,6 @@
             border-radius: 20px;
         }
 
-        /* Neon Glow */
         .neon-text {
             text-shadow: 0 0 10px rgba(255, 105, 180, 0.7), 0 0 20px rgba(255, 105, 180, 0.5);
         }
@@ -112,7 +112,6 @@
             pointer-events: none;
         }
 
-        /* Custom Scrollbar for content areas */
         .scroll-hidden::-webkit-scrollbar {
             display: none;
         }
@@ -121,7 +120,6 @@
             scrollbar-width: none;
         }
 
-        /* Animations */
         .page-transition {
             animation: fadeUp 0.4s ease-out forwards;
         }
@@ -140,9 +138,57 @@
 
         input::placeholder { color: rgba(255,255,255,0.3); }
         
-        /* Modal Header Fix for iPhone Notch */
         .modal-header {
             padding-top: max(2rem, env(safe-area-inset-top));
+        }
+
+        /* Match 3 Grid Styles */
+        .match-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 4px;
+            width: 100%;
+            max-width: 300px;
+            margin: 0 auto;
+        }
+        .match-cell {
+            aspect-ratio: 1;
+            background: rgba(255,255,255,0.1);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        .match-cell.selected {
+            background: rgba(255, 105, 180, 0.4);
+            transform: scale(0.9);
+            border: 2px solid #ff69b4;
+        }
+        /* Custom Range Slider */
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 20px;
+            width: 20px;
+            border-radius: 50%;
+            background: #ff69b4;
+            cursor: pointer;
+            margin-top: -8px;
+            box-shadow: 0 0 10px rgba(255,105,180,0.5);
+        }
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 4px;
+            cursor: pointer;
+            background: rgba(255,255,255,0.2);
+            border-radius: 2px;
         }
     </style>
 </head>
@@ -160,20 +206,25 @@
                class="glass text-center text-2xl tracking-widest text-white rounded-full py-4 px-6 w-64 focus:outline-none focus:border-primary transition-all mb-6">
         
         <button onclick="checkPasscodeManual()" class="bg-primary text-white font-bold py-3 px-8 rounded-full shadow-lg active:scale-95 transition-transform">
-            Відкрити
+            Відкрити ❤️
         </button>
         
-        <p id="errorMsg" class="text-red-400 mt-6 text-sm opacity-0 transition-opacity">Спробуй ще, моя любове ❤️</p>
+        <p id="errorMsg" class="text-red-400 mt-6 text-sm opacity-0 transition-opacity">Спробуй ще, моя коханнячко ❤️</p>
     </div>
 
     <div id="appScreen" class="hidden h-full flex flex-col">
         
         <header class="pt-14 pb-4 px-6 flex justify-between items-center glass border-b-0 rounded-b-3xl z-20">
-            <div>
-                <h1 class="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-primary to-purple-400">Вітуська</h1>
-                <div class="flex items-center gap-2 text-xs text-gray-300">
-                    <span class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
-                    Зв'язок: Встановлено ❤️
+            <div class="flex items-center gap-3">
+                <button onclick="openAdminPanel()" class="text-gray-400 hover:text-white transition-colors">
+                    <i class="fas fa-cog text-xl"></i>
+                </button>
+                <div>
+                    <h1 class="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-primary to-purple-400">Вітуська</h1>
+                    <div class="flex items-center gap-2 text-xs text-gray-300">
+                        <span class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+                        Зв'язок: Встановлено ❤️
+                    </div>
                 </div>
             </div>
             <div class="glass px-3 py-1 rounded-full flex items-center gap-2">
@@ -186,20 +237,19 @@
             </main>
 
         <nav class="fixed bottom-6 left-6 right-6 h-20 glass rounded-2xl flex justify-around items-center z-40 shadow-2xl">
-            <button onclick="router('home')" class="nav-btn text-gray-400 hover:text-primary transition-colors flex flex-col items-center gap-1 active:scale-90 duration-200">
+            <button onclick="router('home')" id="nav-home" class="nav-btn text-primary transition-colors flex flex-col items-center gap-1 active:scale-90 duration-200">
                 <i class="fas fa-heart text-2xl"></i>
                 <span class="text-[10px]">Головна</span>
             </button>
-            <button onclick="router('store')" class="nav-btn text-gray-400 hover:text-primary transition-colors flex flex-col items-center gap-1 active:scale-90 duration-200">
+            <button onclick="router('store')" id="nav-store" class="nav-btn text-gray-400 hover:text-primary transition-colors flex flex-col items-center gap-1 active:scale-90 duration-200">
                 <i class="fas fa-store text-2xl"></i>
                 <span class="text-[10px]">Магазин</span>
             </button>
-            <button onclick="router('letters')" class="nav-btn text-gray-400 hover:text-primary transition-colors flex flex-col items-center gap-1 active:scale-90 duration-200">
-                <i class="fas fa-envelope-open-text text-2xl"></i>
-                <span class="text-[10px]">Листи</span>
+            <button onclick="router('games')" id="nav-games" class="nav-btn text-gray-400 hover:text-primary transition-colors flex flex-col items-center gap-1 active:scale-90 duration-200">
+                <i class="fas fa-gamepad text-2xl"></i>
+                <span class="text-[10px]">Ігри</span>
             </button>
         </nav>
-
     </div>
 
     <div id="buyModal" class="hidden fixed inset-0 z-[60] bg-black/80 backdrop-blur-sm flex items-center justify-center p-6 page-transition">
@@ -207,8 +257,17 @@
             <div class="w-16 h-16 rounded-full bg-primary/20 flex items-center justify-center mx-auto mb-4">
                 <i class="fas fa-question text-3xl text-primary"></i>
             </div>
-            <h3 class="text-xl font-bold mb-2">Ти впевнена, принцесо?</h3>
+            <h3 class="text-xl font-bold mb-2">Купуємо?</h3>
             <p class="text-gray-300 mb-6 text-sm">Це коштуватиме <span id="modalPrice" class="font-bold text-primary"></span> монет.</p>
+            
+            <div id="quantityControl" class="hidden mb-6">
+                <div class="flex justify-between text-sm text-gray-400 mb-2">
+                    <span>Кількість:</span>
+                    <span id="quantityValue" class="text-white font-bold">1</span>
+                </div>
+                <input type="range" id="quantityRange" min="1" max="10" value="1" class="w-full">
+            </div>
+
             <div class="flex gap-4">
                 <button onclick="closeModal('buyModal')" class="flex-1 py-3 rounded-xl bg-gray-700 text-white font-medium hover:bg-gray-600">Ні</button>
                 <button onclick="confirmPurchase()" class="flex-1 py-3 rounded-xl bg-gradient-to-r from-primary to-purple-600 text-white font-bold shadow-lg shadow-primary/30">Так ❤️</button>
@@ -226,6 +285,7 @@
                 <div class="absolute -right-3 top-1/2 w-6 h-6 bg-[#1a0f1f] rounded-full"></div>
                 
                 <h2 id="ticketTitle" class="text-2xl font-bold text-center mb-2 neon-text">Масаж</h2>
+                <p id="ticketQty" class="text-primary text-sm font-bold mb-1"></p>
                 <p class="text-gray-400 text-xs mb-4">ДІЙСНИЙ ПРОТЯГОМ 24 ГОДИН</p>
                 <div class="w-32 h-32 bg-white p-2 rounded-lg mb-4">
                     <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=LoveForVituska" class="w-full h-full object-cover opacity-90">
@@ -241,60 +301,114 @@
         </div>
     </div>
 
-    <div id="letterModal" class="hidden fixed inset-0 z-[60] bg-[#1a0f1f] flex flex-col page-transition">
-        <div class="pt-16 pb-4 px-6 flex justify-between items-center glass border-b border-white/10 relative z-50">
-            <button onclick="closeModal('letterModal')" class="text-gray-400 hover:text-white p-2 active:scale-90 transition-transform">
-                <i class="fas fa-arrow-left text-2xl"></i>
-            </button>
-            <span class="font-bold text-primary text-lg">Для тебе 💌</span>
-            <div class="w-8"></div> </div>
-        
-        <div id="letterContent" class="flex-1 p-6 overflow-y-auto">
+    <div id="adminModal" class="hidden fixed inset-0 z-[80] bg-black/95 backdrop-blur-xl flex items-center justify-center p-6 page-transition">
+        <div class="glass-card w-full max-w-sm p-6">
+            <h3 class="text-xl font-bold mb-4 text-center">Налаштування розробника</h3>
+            
+            <div id="adminAuth">
+                <p class="text-sm text-gray-400 mb-2">Введіть пароль:</p>
+                <input type="password" id="adminPass" class="w-full bg-white/10 rounded-lg p-3 text-white mb-4 border border-white/20 focus:border-primary outline-none">
+                <button onclick="checkAdminPass()" class="w-full bg-gray-700 py-2 rounded-lg font-bold">Увійти</button>
             </div>
+
+            <div id="adminControls" class="hidden">
+                <p class="text-sm text-gray-400 mb-2">Баланс монет:</p>
+                <input type="number" id="newCoinBalance" class="w-full bg-white/10 rounded-lg p-3 text-white mb-4 border border-white/20">
+                <button onclick="saveAdminChanges()" class="w-full bg-green-600 py-3 rounded-lg font-bold mb-2">Зберегти</button>
+            </div>
+            
+            <button onclick="closeModal('adminModal')" class="w-full mt-4 text-sm text-gray-500">Закрити</button>
+        </div>
+    </div>
+
+    <div id="match3Modal" class="hidden fixed inset-0 z-[70] bg-[#1a0f1f] flex flex-col items-center justify-center p-4">
+        <div class="glass-card w-full max-w-sm p-6 text-center">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-xl font-bold text-primary">3 в ряд</h3>
+                <div class="text-white text-sm">Очки: <span id="matchScore">0</span>/100</div>
+            </div>
+            
+            <div id="gameGrid" class="match-grid mb-6">
+                </div>
+
+            <p id="gameStatus" class="text-sm text-gray-400 mb-4">Знайди пару...</p>
+            <button onclick="closeModal('match3Modal')" class="text-gray-500 text-sm">Вийти</button>
+        </div>
+    </div>
+
+    <div id="magicBallModal" class="hidden fixed inset-0 z-[70] bg-black/90 flex flex-col items-center justify-center p-6 text-center">
+        <div class="w-64 h-64 rounded-full bg-gradient-to-br from-purple-900 to-black border-4 border-gray-800 flex items-center justify-center shadow-[0_0_50px_rgba(139,92,246,0.5)] mb-8" id="magicBall">
+            <div class="w-32 h-32 rounded-full bg-indigo-900/50 flex items-center justify-center text-center p-4">
+                <p id="magicAnswer" class="text-gray-400 text-xs font-bold uppercase tracking-widest">Задай питання</p>
+            </div>
+        </div>
+        <button onclick="shakeBall()" class="bg-secondary text-white font-bold py-3 px-10 rounded-full shadow-lg active:scale-95 transition-transform">
+            Отримати відповідь
+        </button>
+        <button onclick="closeModal('magicBallModal')" class="mt-8 text-gray-500">Закрити</button>
+    </div>
+
+    <div id="breatheModal" class="hidden fixed inset-0 z-[70] bg-[#1a0f1f] flex flex-col items-center justify-center">
+        <div class="relative w-64 h-64 flex items-center justify-center">
+            <div class="absolute inset-0 bg-primary/20 rounded-full animate-breathe blur-xl"></div>
+            <div class="absolute inset-4 bg-primary/40 rounded-full animate-breathe blur-md" style="animation-delay: 0.1s"></div>
+            <div class="relative z-10 text-center">
+                <h2 class="text-2xl font-bold text-white mb-2">Дихай</h2>
+                <p class="text-xs text-primary/80">Вдих... Видих...</p>
+            </div>
+        </div>
+        <p class="mt-12 text-gray-400 text-sm max-w-xs text-center px-6">"Я поруч. Все добре. Ти в безпеці."</p>
+        <button onclick="closeModal('breatheModal')" class="absolute bottom-10 text-gray-500">Завершити</button>
     </div>
 
     <script>
         const CONFIG = {
             startDate: new Date("2020-11-10T00:00:00"),
             passcode: "10112020",
-            email: "illia.nazarivskyi.crowner@gmail.com"
+            email: "illia.nazarivskyi.crowner@gmail.com",
+            adminPass: "admin"
         };
 
+        // NEW: Cooldowns in minutes (converted to ms in logic)
         const ITEMS = [
-            { id: 1, title: "Кава/Чай", price: 20, icon: "☕" },
-            { id: 2, title: "Поцілунок", price: 30, icon: "💋" },
-            { id: 3, title: "Обійми (10 хв)", price: 40, icon: "🤗" },
-            { id: 4, title: "Масаж ніг", price: 50, icon: "🦶" },
-            { id: 5, title: "Масаж спини", price: 70, icon: "💆‍♀️" },
-            { id: 6, title: "Сніданок у ліжко", price: 80, icon: "🥞" },
-            { id: 7, title: "Вечеря від Іллі", price: 90, icon: "🍝" },
-            { id: 8, title: "Кіно (твій вибір)", price: 110, icon: "🎬" },
-            { id: 9, title: "Джокер (Win)", price: 200, icon: "🃏", weekly: true }
+            { id: 1, title: "Кава/Чай", price: 20, icon: "☕", cooldownMinutes: 40 }, // 40 min
+            { id: 2, title: "Поцілунок", price: 30, icon: "💋", cooldownMinutes: 10, multiple: true }, // 10 min + multiple
+            { id: 3, title: "Обійми (10 хв)", price: 40, icon: "🤗", cooldownMinutes: 120 },
+            { id: 4, title: "Масаж ніг", price: 50, icon: "🦶", cooldownMinutes: 1440 },
+            { id: 5, title: "Масаж спини", price: 70, icon: "💆‍♀️", cooldownMinutes: 1440 },
+            { id: 6, title: "Сніданок у ліжко", price: 80, icon: "🥞", cooldownMinutes: 720 },
+            { id: 7, title: "Вечеря від Іллі", price: 90, icon: "🍝", cooldownMinutes: 720 },
+            { id: 8, title: "Кіно (твій вибір)", price: 110, icon: "🎬", cooldownMinutes: 1440 },
+            { id: 9, title: "Джокер (Win)", price: 200, icon: "🃏", cooldownMinutes: 10080 }
         ];
 
-        const LETTERS = [
-            { id: 'sad', title: "Коли тобі сумно", icon: "😢", content: `<p class="mb-4">Моя рідна, пам'ятай: жоден дощ не йде вічно. Я поруч, навіть якщо фізично далеко.</p><img src="https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExajZ4ZnV4ZnV4ZnV4ZnV4ZnV4ZnV4ZnV4ZnV4ZnV4ZnV4ZnV4ZnV4ZiZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/3oEdv4hwTZKSjEBsWS/giphy.gif" class="rounded-xl w-full mb-4"><p>Ти — моє сонце. Витри слізки, бо вони занадто дорогі.</p>` },
-            { id: 'miss', title: "Коли сумуєш", icon: "🥺", content: `<p class="mb-4">Я теж за тобою сумую. Кожну секунду.</p><p>Закрий очі і уяви, що я тебе міцно обіймаю.</p><img src="https://media.giphy.com/media/l4pTdcifPZLpDjL1e/giphy.gif" class="rounded-xl w-full">` },
-            { id: 'mad', title: "Коли злишся", icon: "😡", content: `<p class="mb-4">Я знаю, що я іноді буваю нестерпним. Пробач мені, будь ласка.</p><p>Давай не будемо витрачати час на сварки? Люблю тебе!</p>` },
-            { id: 'sleep', title: "Не можеш спати", icon: "😴", content: `<p>Спробуй порахувати не овець, а наші поцілунки. Їх було мільйони.</p><iframe class="w-full h-48 rounded-xl mb-4" src="https://www.youtube.com/embed/jfKfPfyJRdk" frameborder="0" allowfullscreen></iframe>` },
-            { id: 'now', title: "ВІДКРИЙ ЗАРАЗ", icon: "💖", content: `<h2 class="text-2xl font-bold text-primary mb-4">З Днем Святого Валентина!</h2><p class="mb-4">Ти — найкраще, що траплялося в моєму житті. Дякулю тобі за те, що ти є.</p><p>У неділю буде наше справжнє свято. А поки — тримай цей цифровий всесвіт.</p>` },
-            { id: 'proud', title: "Коли горда", icon: "🏆", content: `<p>Ти — розумничка! Я завжди знав, що ти зможеш. Пишаюся тобою безмежно!</p>` },
-            { id: 'smile', title: "Хочеш усмішку", icon: "😊", content: `<p>Чому скелет не пішов на дискотеку? Бо йому не було з ким піти (ба-дум-тс)! Посміхнись, тобі це так личить.</p>` },
-            { id: 'support', title: "Потрібна підтримка", icon: "🤗", content: `<p>Ти сильніша, ніж думаєш. У тебе все вийде, а я подаватиму патрони.</p>` },
-            { id: 'romantic', title: "Романтика", icon: "🌹", content: `<p>Твої очі як океан, в якому я хочу тонути вічно...</p>` },
-            { id: 'hungry', title: "Коли голодна", icon: "🍓", content: `<p>Терміново з'їж щось смачненьке! Або напиши мені, я замовлю доставку.</p>` },
-            { id: 'tired', title: "Втомлена", icon: "😩", content: `<p>Відклади все. Ти у себе одна. Лягай, відпочинь, світ почекає.</p>` },
-            { id: 'love', title: "Хочеш 'Люблю'", icon: "❤️", content: `<h1 class="text-4xl text-center text-primary font-bold animate-pulse">Я ТЕБЕ ЛЮБЛЮ!</h1>` },
+        const QUOTES_DB = [
+            "Я люблю тебе не за те, хто ти, а за те, хто я, коли я з тобою.",
+            "Ти — моя найулюбленіша причина не спати вночі.",
+            "Коли я дивлюсь на тебе, я бачу весь світ в твоїх очах.",
+            "Твоя посмішка — це все, що мені потрібно для щастя.",
+            "З тобою кожна мить перетворюється на казку.",
+            "Ти — мій дім, де б ми не були.",
+            "Моє серце б'ється в ритмі твого імені.",
+            "Ти робиш мене кращим кожного дня.",
+            "Я обираю тебе. І буду обирати тебе знову і знову.",
+            "Твої обійми — це моє найбезпечніше місце.",
+            "Кохання — це коли твоє щастя важливіше за моє.",
+            "Ти — найкраща пригода мого життя.",
+            "Я хочу тримати твою руку, коли мені буде 80.",
+            "Ти — моя випадковість, на яку я чекав все життя."
         ];
 
         let appState = JSON.parse(localStorage.getItem('ourSpaceData')) || {
             coins: 500,
             purchases: [],
-            openedLetters: [],
+            easterEggClaimed: false,
             lastLogin: null
         };
         
         let els = {};
+        let currentRoute = 'home';
+        let purchaseQty = 1;
 
         function init() {
             els = {
@@ -368,30 +482,52 @@
         }
 
         function router(route) {
+            currentRoute = route;
             const content = els.content;
             content.innerHTML = '';
+            
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                btn.classList.remove('text-primary');
+                btn.classList.add('text-gray-400');
+            });
+            document.getElementById(`nav-${route}`).classList.add('text-primary');
+            document.getElementById(`nav-${route}`).classList.remove('text-gray-400');
+
             if (route === 'home') renderHome(content);
             if (route === 'store') renderStore(content);
-            if (route === 'letters') renderLetters(content);
+            if (route === 'games') renderGames(content);
+        }
+
+        function getDailyQuote() {
+            const start = new Date(new Date().getFullYear(), 0, 0);
+            const diff = new Date() - start;
+            const oneDay = 1000 * 60 * 60 * 24;
+            const dayOfYear = Math.floor(diff / oneDay);
+            return QUOTES_DB[dayOfYear % QUOTES_DB.length];
         }
 
         function renderHome(container) {
+            const dailyQuote = getDailyQuote();
+
             container.innerHTML = `
                 <div class="flex flex-col items-center justify-center h-full w-full max-w-sm mx-auto pb-24 space-y-16 page-transition">
                     
                     <div id="timerContainer" class="text-center relative py-2 active:scale-95 transition-transform w-full" onclick="handleTimerClick()">
                         <div class="text-gray-400 text-[10px] font-bold uppercase tracking-[0.3em] mb-4">Ми разом вже</div>
-                        <h2 id="daysCounter" class="text-7xl font-black text-white mb-2 drop-shadow-[0_0_15px_rgba(255,255,255,0.3)] leading-none">0</h2>
-                        <span class="text-2xl text-primary font-medium tracking-widest">днів</span>
-                        <div class="mt-8 py-2 px-6 bg-white/5 rounded-full border border-white/5 inline-block">
-                             <div id="timeCounter" class="text-gray-300 font-mono text-sm tracking-widest">00:00:00</div>
+                        
+                        <div class="flex flex-col items-center justify-center">
+                            <h2 id="daysCounter" class="text-7xl font-black text-white drop-shadow-[0_0_15px_rgba(255,255,255,0.3)] leading-none">0</h2>
+                            <span class="text-2xl text-primary font-medium tracking-widest my-2">днів</span>
+                            <div class="mt-2 py-2 px-6 bg-white/5 rounded-full border border-white/5 inline-block">
+                                <div id="timeCounter" class="text-gray-300 font-mono text-sm tracking-widest">00:00:00</div>
+                            </div>
                         </div>
                     </div>
                     
                     <div class="w-full glass-card p-6 border-l-4 border-l-primary relative overflow-hidden text-left">
                         <div class="absolute -right-4 -top-4 text-6xl opacity-5">❝</div>
                         <h3 class="text-sm font-bold mb-2 text-primary uppercase tracking-wide">Цитата дня</h3>
-                        <p class="text-md italic text-gray-200 font-serif leading-relaxed">"Я люблю тебе не за те, хто ти, а за те, хто я, коли я з тобою."</p>
+                        <p class="text-md italic text-gray-200 font-serif leading-relaxed">"${dailyQuote}"</p>
                     </div>
                 </div>
             `;
@@ -409,55 +545,228 @@
 
                 if (lastPurchase) {
                     const diff = Date.now() - lastPurchase.ts;
-                    const cdTime = (item.weekly ? 7 * 24 : 24) * 60 * 60 * 1000;
+                    const cdTime = item.cooldownMinutes * 60 * 1000;
+                    
                     if (diff < cdTime) {
                         onCooldown = true;
-                        const hoursLeft = Math.ceil((cdTime - diff) / (1000 * 60 * 60));
-                        timeLeftStr = `${hoursLeft} год`;
+                        const minsLeft = Math.ceil((cdTime - diff) / (1000 * 60));
+                        if(minsLeft > 60) {
+                             timeLeftStr = `${Math.ceil(minsLeft/60)} год`;
+                        } else {
+                             timeLeftStr = `${minsLeft} хв`;
+                        }
                     }
                 }
 
                 const card = document.createElement('div');
-                card.className = `glass-card p-4 flex flex-col items-center justify-between text-center min-h-[160px] ${onCooldown ? 'opacity-50 grayscale' : 'active:scale-95 transition-transform'}`;
+                card.className = `glass-card p-4 flex flex-col items-center justify-between text-center min-h-[160px] ${onCooldown ? 'opacity-50 grayscale cursor-not-allowed' : 'active:scale-95 transition-transform cursor-pointer'}`;
                 card.onclick = () => !onCooldown && openBuyModal(item);
                 
                 card.innerHTML = `
                     <div class="text-4xl mb-2">${item.icon}</div>
                     <div class="font-bold text-sm mb-1 leading-tight">${item.title}</div>
                     ${onCooldown 
-                        ? `<div class="text-xs text-red-300 font-mono mt-2">⏳ ${timeLeftStr}</div>` 
-                        : `<div class="text-primary font-bold mt-auto">${item.price} 🪙</div>`
+                        ? `<div class="text-xs text-red-300 font-mono mt-2 bg-red-900/30 px-2 py-1 rounded">⏳ Замовлено (${timeLeftStr})</div>` 
+                        : `<div class="text-primary font-bold mt-auto border border-primary/30 px-3 py-1 rounded-full text-xs">${item.price} 🪙</div>`
                     }
                 `;
                 grid.appendChild(card);
             });
             
-            container.innerHTML = `<h2 class="text-xl font-bold mb-4 pl-2">Магазин Бажань</h2>`;
+            container.innerHTML = `<h2 class="text-xl font-bold mb-4 pl-2 text-center w-full">Магазин Бажань</h2>`;
             container.appendChild(grid);
         }
 
-        function renderLetters(container) {
-            const grid = document.createElement('div');
-            grid.className = 'grid grid-cols-3 gap-3 page-transition';
+        function renderGames(container) {
+            container.innerHTML = `
+                <div class="flex flex-col space-y-4 page-transition pb-24">
+                    <h2 class="text-xl font-bold mb-2 pl-2 text-center">Розваги</h2>
+
+                    <div class="glass-card p-4 flex items-center justify-between active:scale-95 transition-transform" onclick="startMatch3Init()">
+                        <div class="flex items-center gap-4">
+                            <div class="w-12 h-12 rounded-full bg-gradient-to-tr from-pink-500 to-yellow-500 flex items-center justify-center text-2xl">💎</div>
+                            <div class="text-left">
+                                <h3 class="font-bold">3 в ряд</h3>
+                                <p class="text-[10px] text-gray-400">Ціна: 10 🪙 | Виграш: 50 🪙</p>
+                            </div>
+                        </div>
+                        <i class="fas fa-chevron-right text-gray-500"></i>
+                    </div>
+
+                    <div class="glass-card p-4 flex items-center justify-between active:scale-95 transition-transform" onclick="openMagicBall()">
+                        <div class="flex items-center gap-4">
+                            <div class="w-12 h-12 rounded-full bg-indigo-600 flex items-center justify-center text-2xl">🎱</div>
+                            <div class="text-left">
+                                <h3 class="font-bold">Магічна куля</h3>
+                                <p class="text-[10px] text-gray-400">Дізнайся свою долю</p>
+                            </div>
+                        </div>
+                        <i class="fas fa-chevron-right text-gray-500"></i>
+                    </div>
+
+                    <div class="glass-card p-4 flex items-center justify-between active:scale-95 transition-transform" onclick="openBreathe()">
+                        <div class="flex items-center gap-4">
+                            <div class="w-12 h-12 rounded-full bg-teal-500 flex items-center justify-center text-2xl">🧘‍♀️</div>
+                            <div class="text-left">
+                                <h3 class="font-bold">Дихання Кохання</h3>
+                                <p class="text-[10px] text-gray-400">Турбота та Дзен</p>
+                            </div>
+                        </div>
+                        <i class="fas fa-chevron-right text-gray-500"></i>
+                    </div>
+                </div>
+            `;
+        }
+
+        // --- MATCH 3 LOGIC (REAL) ---
+        let board = [];
+        let score = 0;
+        let selectedCell = null;
+        const width = 5;
+        const candyColors = ['💎', '❤️', '🍒', '🌟', '🍇'];
+
+        function startMatch3Init() {
+            if (appState.coins < 10) {
+                showToast("Треба 10 монет для гри 🥺");
+                return;
+            }
+            appState.coins -= 10;
+            saveState();
             
-            LETTERS.forEach(letter => {
-                const isOpened = appState.openedLetters.includes(letter.id);
-                
-                const card = document.createElement('div');
-                card.className = `glass-card aspect-square flex flex-col items-center justify-center p-2 text-center transition-all ${isOpened ? 'border-primary/50 bg-primary/10' : 'active:scale-95'}`;
-                card.onclick = () => openLetter(letter);
-                
-                // FIX 2: Always showing title, even if closed
-                card.innerHTML = isOpened 
-                    ? `<div class="text-2xl mb-1">${letter.icon}</div><div class="text-[8px] text-gray-300 leading-tight">${letter.title}</div>`
-                    : `<i class="fas fa-envelope text-3xl text-gray-400 mb-2"></i><div class="text-[8px] text-gray-500 leading-tight">${letter.title}</div>`;
-                
-                grid.appendChild(card);
-            });
-
-            container.innerHTML = `<h2 class="text-xl font-bold mb-4 pl-2">Відкрий, коли...</h2>`;
-            container.appendChild(grid);
+            score = 0;
+            document.getElementById('matchScore').innerText = score;
+            document.getElementById('match3Modal').classList.remove('hidden');
+            createBoard();
         }
+
+        function createBoard() {
+            const grid = document.getElementById('gameGrid');
+            grid.innerHTML = '';
+            board = [];
+            
+            for (let i = 0; i < width * width; i++) {
+                const candy = document.createElement('div');
+                candy.setAttribute('id', i);
+                let randomColor = Math.floor(Math.random() * candyColors.length);
+                candy.innerText = candyColors[randomColor];
+                candy.className = 'match-cell';
+                
+                // Click Event
+                candy.addEventListener('click', () => clickCandy(candy));
+                
+                grid.appendChild(candy);
+                board.push(candy);
+            }
+        }
+
+        function clickCandy(cell) {
+            if (!selectedCell) {
+                selectedCell = cell;
+                cell.classList.add('selected');
+            } else {
+                let prev = selectedCell;
+                selectedCell.classList.remove('selected');
+                selectedCell = null;
+                
+                // Logic to swap
+                // Simple logic: just swap content and check match
+                let temp = prev.innerText;
+                prev.innerText = cell.innerText;
+                cell.innerText = temp;
+                
+                checkMatches();
+            }
+        }
+
+        function checkMatches() {
+            let matchFound = false;
+            // Row Check
+            for (let i = 0; i < 25; i++) {
+                let rowOfThree = [i, i+1, i+2];
+                // Check bounds (5x5 grid)
+                if (i % 5 > 2) continue;
+
+                let decidedColor = board[i].innerText;
+                if (decidedColor === '') continue;
+
+                if (rowOfThree.every(index => board[index].innerText === decidedColor)) {
+                    score += 10;
+                    document.getElementById('matchScore').innerText = score;
+                    rowOfThree.forEach(index => {
+                        board[index].innerText = ''; // Clear
+                        // Respawn
+                        let randomColor = Math.floor(Math.random() * candyColors.length);
+                        setTimeout(()=> board[index].innerText = candyColors[randomColor], 200);
+                    });
+                    matchFound = true;
+                }
+            }
+
+            // Win condition
+            if (score >= 100) {
+                document.getElementById('gameStatus').innerText = "ПЕРЕМОГА! +50 монет!";
+                document.getElementById('gameStatus').classList.add('text-green-400', 'font-bold');
+                confetti({ particleCount: 150, spread: 70 });
+                appState.coins += 50;
+                saveState();
+                score = 0; // Reset to prevent double farming
+            }
+        }
+
+
+        // 2. Magic Ball Logic
+        function openMagicBall() {
+            document.getElementById('magicBallModal').classList.remove('hidden');
+            document.getElementById('magicAnswer').innerText = "ЗАДАЙ ПИТАННЯ...";
+        }
+
+        function shakeBall() {
+            const ball = document.getElementById('magicBall');
+            ball.classList.add('shake');
+            if (navigator.vibrate) navigator.vibrate(200);
+
+            setTimeout(() => {
+                ball.classList.remove('shake');
+                const answers = ["Так, звісно!", "Ні", "Можливо", "Спитай Іллю", "Зірки кажуть ТАК", "Сумнівно"];
+                document.getElementById('magicAnswer').innerText = answers[Math.floor(Math.random() * answers.length)];
+            }, 500);
+        }
+
+        // 3. Breathe Logic
+        function openBreathe() {
+            document.getElementById('breatheModal').classList.remove('hidden');
+        }
+
+        // --- ADMIN PANEL LOGIC ---
+        function openAdminPanel() {
+            document.getElementById('adminModal').classList.remove('hidden');
+            document.getElementById('adminAuth').classList.remove('hidden');
+            document.getElementById('adminControls').classList.add('hidden');
+            document.getElementById('adminPass').value = '';
+        }
+
+        function checkAdminPass() {
+            const pass = document.getElementById('adminPass').value;
+            if (pass === CONFIG.adminPass) {
+                document.getElementById('adminAuth').classList.add('hidden');
+                document.getElementById('adminControls').classList.remove('hidden');
+                document.getElementById('newCoinBalance').value = appState.coins;
+            } else {
+                showToast("Невірний пароль 🚫");
+            }
+        }
+
+        function saveAdminChanges() {
+            const newCoins = parseInt(document.getElementById('newCoinBalance').value);
+            if (!isNaN(newCoins)) {
+                appState.coins = newCoins;
+                saveState();
+                showToast("Баланс оновлено! ✅");
+                closeModal('adminModal');
+            }
+        }
+
+        // --- CORE FUNCTIONS ---
 
         let timerInterval;
         let timerClicks = 0;
@@ -481,8 +790,11 @@
         }
 
         function handleTimerClick() {
+            if (appState.easterEggClaimed) return;
+
             timerClicks++;
             if (timerClicks === 10) {
+                appState.easterEggClaimed = true;
                 confetti({
                     particleCount: 200,
                     spread: 100,
@@ -504,7 +816,28 @@
                 return;
             }
             selectedItem = item;
-            document.getElementById('modalPrice').innerText = item.price;
+            
+            // Logic for Quantity Slider
+            const qtyControl = document.getElementById('quantityControl');
+            if (item.multiple) {
+                qtyControl.classList.remove('hidden');
+                purchaseQty = 1;
+                document.getElementById('quantityValue').innerText = 1;
+                document.getElementById('quantityRange').value = 1;
+                document.getElementById('modalPrice').innerText = item.price;
+                
+                // Listener
+                document.getElementById('quantityRange').oninput = function() {
+                    purchaseQty = this.value;
+                    document.getElementById('quantityValue').innerText = purchaseQty;
+                    document.getElementById('modalPrice').innerText = item.price * purchaseQty;
+                };
+            } else {
+                qtyControl.classList.add('hidden');
+                purchaseQty = 1;
+                document.getElementById('modalPrice').innerText = item.price;
+            }
+
             document.getElementById('buyModal').classList.remove('hidden');
         }
 
@@ -514,59 +847,47 @@
 
         function confirmPurchase() {
             if (!selectedItem) return;
-            appState.coins -= selectedItem.price;
+            const finalPrice = selectedItem.price * purchaseQty;
+            
+            if (appState.coins < finalPrice) {
+                showToast("Не вистачає монет для такої кількості!");
+                return;
+            }
+
+            appState.coins -= finalPrice;
             appState.purchases.push({ itemId: selectedItem.id, ts: Date.now() });
             saveState();
             closeModal('buyModal');
+            
+            if (currentRoute === 'store') {
+                renderStore(document.getElementById('mainContent'));
+            }
+
             const ticketModal = document.getElementById('ticketModal');
             document.getElementById('ticketTitle').innerText = selectedItem.title;
+            
+            // Show Quantity in Ticket
+            const qtyText = purchaseQty > 1 ? `(Кількість: ${purchaseQty})` : "";
+            document.getElementById('ticketQty').innerText = qtyText;
+            
             document.getElementById('ticketId').innerText = `LOVE-${Math.floor(Math.random()*10000)}`;
+            
             const subject = encodeURIComponent(`OurSpace: Вітуська купила ${selectedItem.title}!`);
-            const body = encodeURIComponent(`Привіт, Ілля!\n\nЯ щойно купила "${selectedItem.title}" за ${selectedItem.price} монет.\n\nКоли виконаєш? ❤️`);
+            const body = encodeURIComponent(`Привіт, Ілля!\n\nЯ щойно купила "${selectedItem.title}" ${purchaseQty > 1 ? 'у кількості ' + purchaseQty : ''} за ${finalPrice} монет.\n\nКоли виконаєш? ❤️`);
             document.getElementById('emailLink').href = `mailto:${CONFIG.email}?subject=${subject}&body=${body}`;
             ticketModal.classList.remove('hidden');
             confetti({ particleCount: 150, spread: 60 });
         }
 
-        function openLetter(letter) {
-            const modal = document.getElementById('letterModal');
-            const content = document.getElementById('letterContent');
-            content.innerHTML = `
-                <div class="text-center mb-6 pt-4">
-                    <div class="text-6xl mb-4 animate-float">${letter.icon}</div>
-                    <h2 class="text-2xl font-bold text-white">${letter.title}</h2>
-                </div>
-                <div class="text-gray-200 leading-relaxed space-y-4 pb-20">
-                    ${letter.content}
-                </div>
-            `;
-            modal.classList.remove('hidden');
-            if (!appState.openedLetters.includes(letter.id)) {
-                appState.openedLetters.push(letter.id);
-                appState.coins += 25;
-                saveState();
-                setTimeout(() => {
-                    confetti({ particleCount: 50, origin: { y: 0.8 } });
-                    showToast("+25 монет за відкриття!");
-                }, 1000);
-            }
-        }
-
         function showToast(msg) {
             const toast = document.createElement('div');
-    
-            // Використовуємо 'animate-toast-in' замість 'animate-bounce'
             toast.className = 'fixed bottom-24 left-0 right-0 mx-auto w-fit bg-white/10 backdrop-blur-md border border-white/20 px-6 py-3 rounded-full text-sm font-bold shadow-xl z-[100] text-center animate-toast-in';
-    
             toast.innerText = msg;
             document.body.appendChild(toast);
     
-            // Через 3 секунди запускаємо анімацію зникнення
             setTimeout(() => {
-                toast.classList.remove('animate-toast-in'); // Прибираємо вхідну анімацію
-                toast.classList.add('animate-toast-out'); // Додаємо вихідну
-        
-            // Чекаємо ще 0.5с (поки програє анімація зникнення), і видаляємо з HTML
+                toast.classList.remove('animate-toast-in');
+                toast.classList.add('animate-toast-out');
                 setTimeout(() => {
                     toast.remove();
                 }, 500);
