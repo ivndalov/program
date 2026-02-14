@@ -7,7 +7,8 @@
     
     <link rel="manifest" href="manifest.json">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"> <meta name="apple-mobile-web-app-title" content="OurSpace">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="OurSpace">
     <meta name="theme-color" content="#1a0f1f">
     <link rel="apple-touch-icon" href="https://img.icons8.com/fluency/192/love-circled.png">
 
@@ -59,14 +60,14 @@
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
             background-color: #1a0f1f;
             color: white;
-            overscroll-behavior-y: none;
+            overscroll-behavior-y: none; /* Заборона пружини */
             -webkit-user-select: none;
             user-select: none;
             -webkit-tap-highlight-color: transparent;
             height: 100vh;
-            width: 100vw;
+            width: 100%; /* FIX: Було 100vw, що викликало зсув */
             overflow: hidden;
-            /* ВИДАЛЕНО padding-top з body, щоб фон був на весь екран */
+            position: fixed; /* Фіксація екрану */
         }
 
         /* Safe Area Utilities */
@@ -79,7 +80,7 @@
 
         /* Premium Glassmorphism */
         .glass {
-            background: rgba(26, 15, 31, 0.7); /* Темніший глас для читабельності */
+            background: rgba(26, 15, 31, 0.85); /* Темніший для кращого контрасту */
             backdrop-filter: blur(20px);
             -webkit-backdrop-filter: blur(20px);
             border-bottom: 1px solid rgba(255, 255, 255, 0.05);
@@ -97,10 +98,10 @@
         /* Toast Notification Style */
         .toast-notification {
             position: fixed;
-            bottom: 100px; /* Над навігацією, щоб не перекривати */
+            bottom: 110px; /* Трохи вище меню */
             left: 50%;
             transform: translateX(-50%);
-            background: rgba(255, 105, 180, 0.9); /* Hot Pink */
+            background: rgba(255, 105, 180, 0.95);
             backdrop-filter: blur(10px);
             -webkit-backdrop-filter: blur(10px);
             color: white;
@@ -114,7 +115,8 @@
             align-items: center;
             gap: 10px;
             white-space: nowrap;
-            opacity: 0; /* Для анімації */
+            opacity: 0;
+            pointer-events: none;
         }
 
         /* Neon Glow Background */
@@ -135,13 +137,20 @@
         
         .nav-active { color: #ff69b4; transform: scale(1.1); }
         .nav-active i { filter: drop-shadow(0 0 8px rgba(255,105,180,0.6)); }
+
+        /* Центрування для модалок */
+        .center-flex {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
     </style>
 </head>
 <body>
 
     <div class="bg-glow animate-pulse-slow"></div>
 
-    <div id="loginScreen" class="fixed inset-0 z-50 flex flex-col items-center justify-center p-6 bg-[#1a0f1f] transition-opacity duration-500">
+    <div id="loginScreen" class="fixed inset-0 z-50 flex flex-col items-center justify-center p-6 bg-[#1a0f1f] transition-opacity duration-500 w-full h-full">
         <div class="text-6xl mb-8 animate-heartbeat">🔒</div>
         <h1 class="text-2xl font-bold mb-2 text-center text-primary tracking-wide">OurSpace</h1>
         <p class="text-gray-400 mb-8 text-center text-sm">Введіть дату нашого початку</p>
@@ -158,14 +167,12 @@
 
     <div id="appScreen" class="hidden h-full w-full flex flex-col relative">
         
-        <header class="absolute top-0 left-0 right-0 z-20 glass safe-top">
-            <div class="px-6 py-4 flex justify-between items-center">
-                <div>
-                    <h1 class="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-gray-400">Вітуська</h1>
+        <header class="absolute top-0 left-0 right-0 z-20 glass safe-top w-full">
+            <div class="px-6 py-4 flex justify-between items-center w-full">
+                <div class="flex flex-col items-start"> <h1 class="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-gray-400">Вітуська</h1>
                     <div class="flex items-center gap-2 text-[10px] text-gray-400 font-mono uppercase tracking-wider">
                         <span class="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></span>
-                        Status: Love 1000%
-                    </div>
+                        Статус: Кохання 1000% </div>
                 </div>
                 <div class="bg-white/10 backdrop-blur-md border border-white/10 px-3 py-1.5 rounded-full flex items-center gap-2 shadow-lg">
                     <i class="fas fa-coins text-yellow-400 text-sm"></i>
@@ -174,11 +181,11 @@
             </div>
         </header>
 
-        <main id="mainContent" class="flex-1 overflow-y-auto scroll-hidden px-6 pt-28 pb-28 w-full">
+        <main id="mainContent" class="flex-1 overflow-y-auto scroll-hidden px-4 pt-24 pb-24 w-full text-center">
             </main>
 
-        <nav class="fixed bottom-0 left-0 right-0 glass border-t border-white/5 safe-bottom z-40">
-            <div class="h-20 flex justify-around items-center px-2">
+        <nav class="fixed bottom-0 left-0 right-0 glass border-t border-white/5 safe-bottom z-40 w-full">
+            <div class="h-16 flex justify-around items-center px-2">
                 <button onclick="router('home')" id="nav-home" class="nav-btn text-gray-500 w-16 h-full flex flex-col items-center justify-center gap-1 transition-all duration-300">
                     <i class="fas fa-heart text-xl mb-0.5"></i>
                     <span class="text-[10px] font-medium">Головна</span>
@@ -196,8 +203,8 @@
 
     </div>
 
-    <div id="buyModal" class="hidden fixed inset-0 z-[60] bg-black/80 backdrop-blur-sm flex items-center justify-center p-6">
-        <div class="glass-card w-full max-w-sm p-6 text-center transform transition-all scale-100">
+    <div id="buyModal" class="hidden fixed inset-0 z-[60] bg-black/80 backdrop-blur-sm flex items-center justify-center p-6 w-full h-full">
+        <div class="glass-card w-full max-w-sm p-6 text-center transform transition-all scale-100 mx-auto">
             <div class="w-16 h-16 rounded-full bg-primary/20 flex items-center justify-center mx-auto mb-4 border border-primary/30">
                 <i class="fas fa-heart text-3xl text-primary drop-shadow-[0_0_10px_rgba(255,105,180,0.8)]"></i>
             </div>
@@ -210,21 +217,18 @@
         </div>
     </div>
 
-    <div id="ticketModal" class="hidden fixed inset-0 z-[70] bg-[#1a0f1f] flex flex-col items-center justify-center p-4">
-        <div class="w-full max-w-sm relative">
+    <div id="ticketModal" class="hidden fixed inset-0 z-[70] bg-[#1a0f1f] flex flex-col items-center justify-center p-4 w-full h-full">
+        <div class="w-full max-w-sm relative mx-auto">
             <div class="bg-white text-bg rounded-3xl overflow-hidden shadow-2xl relative">
                 <div class="bg-primary p-4 text-center">
-                    <h3 class="text-white font-black text-lg tracking-widest uppercase">OurSpace Ticket</h3>
-                </div>
+                    <h3 class="text-white font-black text-lg tracking-widest uppercase">Квиток Бажання</h3> </div>
                 <div class="p-8 flex flex-col items-center relative">
                     <div class="absolute -left-4 top-1/2 w-8 h-8 bg-[#1a0f1f] rounded-full"></div>
                     <div class="absolute -right-4 top-1/2 w-8 h-8 bg-[#1a0f1f] rounded-full"></div>
                     <div class="absolute left-4 right-4 top-1/2 border-t-2 border-dashed border-gray-300"></div>
 
                     <h2 id="ticketTitle" class="text-2xl font-black text-center mb-1 uppercase text-gray-800 z-10 bg-white px-2">Послуга</h2>
-                    <p class="text-gray-400 text-[10px] font-mono mb-6 tracking-wide uppercase">One Time Use Only</p>
-                    
-                    <div class="w-40 h-40 bg-gray-900 p-3 rounded-xl mb-4 shadow-inner">
+                    <p class="text-gray-400 text-[10px] font-mono mb-6 tracking-wide uppercase">Одноразове використання</p> <div class="w-40 h-40 bg-gray-900 p-3 rounded-xl mb-4 shadow-inner">
                         <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=LoveVituska" class="w-full h-full object-cover opacity-90 rounded-lg">
                     </div>
                     
@@ -243,16 +247,15 @@
         </div>
     </div>
 
-    <div id="letterModal" class="hidden fixed inset-0 z-[80] bg-[#1a0f1f]/95 backdrop-blur-xl flex flex-col">
-        <div class="safe-top flex items-center justify-between px-6 py-4">
+    <div id="letterModal" class="hidden fixed inset-0 z-[80] bg-[#1a0f1f]/95 backdrop-blur-xl flex flex-col w-full h-full">
+        <div class="safe-top flex items-center justify-between px-6 py-4 w-full">
             <button onclick="closeModal('letterModal')" class="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-white active:scale-90 transition-transform">
                 <i class="fas fa-arrow-left"></i>
             </button>
-            <span class="font-bold text-gray-300 tracking-widest text-xs uppercase">Secret Letter</span>
-            <div class="w-10"></div>
+            <span class="font-bold text-gray-300 tracking-widest text-xs uppercase">Особливий лист</span> <div class="w-10"></div>
         </div>
         
-        <div id="letterContent" class="flex-1 p-8 overflow-y-auto pb-20 flex flex-col items-center">
+        <div id="letterContent" class="flex-1 p-8 overflow-y-auto pb-20 flex flex-col items-center w-full">
             </div>
     </div>
 
@@ -346,7 +349,7 @@
                 if (navigator.vibrate) navigator.vibrate(500);
                 const input = document.getElementById('passcode');
                 const err = document.getElementById('errorMsg');
-                input.classList.add('border-red-500', 'border-2'); // Simple border change instead of shake
+                input.classList.add('border-red-500', 'border-2');
                 err.classList.remove('opacity-0');
                 setTimeout(() => {
                     input.classList.remove('border-red-500', 'border-2');
@@ -388,11 +391,12 @@
         }
 
         function renderHome(container) {
+            // FIX: Removed 100vh requirement, added margin-auto and max-width for centering
             container.innerHTML = `
-                <div class="flex flex-col items-center justify-center min-h-[60vh] space-y-10 animate-slide-up">
-                    <div id="timerContainer" class="text-center relative py-10 active:scale-95 transition-transform" onclick="handleTimerClick()">
+                <div class="flex flex-col items-center justify-center min-h-[60vh] space-y-10 animate-slide-up w-full max-w-sm mx-auto">
+                    <div id="timerContainer" class="text-center relative py-10 active:scale-95 transition-transform w-full" onclick="handleTimerClick()">
                         <div class="text-gray-400 text-[10px] font-bold uppercase tracking-[0.3em] mb-4">Ми разом вже</div>
-                        <h2 id="daysCounter" class="text-8xl font-black text-white mb-2 drop-shadow-[0_0_15px_rgba(255,255,255,0.3)]">0</h2>
+                        <h2 id="daysCounter" class="text-7xl font-black text-white mb-2 drop-shadow-[0_0_15px_rgba(255,255,255,0.3)] leading-none">0</h2>
                         <span class="text-2xl text-primary font-medium tracking-widest">днів</span>
                         <div class="mt-8 py-2 px-6 bg-white/5 rounded-full border border-white/5 inline-block">
                              <div id="timeCounter" class="text-gray-300 font-mono text-sm tracking-widest">00:00:00</div>
@@ -557,12 +561,12 @@
             const modal = document.getElementById('letterModal');
             const content = document.getElementById('letterContent');
             content.innerHTML = `
-                <div class="text-center mb-8 animate-slide-up">
+                <div class="text-center mb-8 animate-slide-up w-full">
                     <div class="text-8xl mb-6 filter drop-shadow-[0_0_20px_rgba(255,105,180,0.5)] animate-float">${letter.icon}</div>
                     <h2 class="text-2xl font-bold text-white uppercase tracking-wider">${letter.title}</h2>
                     <div class="w-16 h-1 bg-primary mx-auto mt-4 rounded-full"></div>
                 </div>
-                <div class="text-gray-200 leading-loose text-justify w-full animate-slide-up" style="animation-delay: 0.1s">
+                <div class="text-gray-200 leading-loose text-justify w-full animate-slide-up px-2" style="animation-delay: 0.1s">
                     ${letter.content}
                 </div>
             `;
