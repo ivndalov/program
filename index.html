@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="color-scheme" content="dark">
     <title>OurSpace</title>
     
     <link rel="manifest" href="manifest.json">
@@ -142,14 +143,17 @@
             padding-top: max(2rem, env(safe-area-inset-top));
         }
 
-        /* Match 3 Grid Styles */
+        /* Improved Match 3 Grid Styles */
         .match-grid {
             display: grid;
             grid-template-columns: repeat(5, 1fr);
-            gap: 4px;
+            gap: 6px;
             width: 100%;
-            max-width: 300px;
+            max-width: 320px;
             margin: 0 auto;
+            background: rgba(0,0,0,0.3);
+            padding: 6px;
+            border-radius: 12px;
         }
         .match-cell {
             aspect-ratio: 1;
@@ -158,15 +162,26 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.5rem;
+            font-size: 1.8rem;
             cursor: pointer;
-            transition: transform 0.2s;
+            transition: all 0.2s ease;
+            user-select: none;
+            box-shadow: inset 0 2px 4px rgba(255,255,255,0.1), 0 2px 4px rgba(0,0,0,0.2);
+        }
+        .match-cell:active {
+            transform: scale(0.9);
         }
         .match-cell.selected {
-            background: rgba(255, 105, 180, 0.4);
-            transform: scale(0.9);
+            background: rgba(255, 105, 180, 0.3);
             border: 2px solid #ff69b4;
+            transform: scale(1.05);
+            z-index: 10;
         }
+        .match-cell.invalid {
+            animation: shake 0.3s;
+            border: 2px solid red;
+        }
+        
         /* Custom Range Slider */
         input[type=range] {
             -webkit-appearance: none;
@@ -209,7 +224,7 @@
             Відкрити ❤️
         </button>
         
-        <p id="errorMsg" class="text-red-400 mt-6 text-sm opacity-0 transition-opacity">Спробуй ще, моя коханнячко ❤️</p>
+        <p id="errorMsg" class="text-red-400 mt-6 text-sm opacity-0 transition-opacity">Спробуй ще, моя любове ❤️</p>
     </div>
 
     <div id="appScreen" class="hidden h-full flex flex-col">
@@ -227,9 +242,9 @@
                     </div>
                 </div>
             </div>
-            <div class="glass px-3 py-1 rounded-full flex items-center gap-2">
+            <div class="glass px-3 py-1 rounded-full flex items-center gap-2 bg-white/10">
                 <i class="fas fa-coins text-yellow-400"></i>
-                <span id="coinBalance" class="font-bold">500</span>
+                <span id="coinBalance" class="font-bold text-white">500</span>
             </div>
         </header>
 
@@ -321,18 +336,35 @@
         </div>
     </div>
 
+    <div id="historyModal" class="hidden fixed inset-0 z-[80] bg-black/95 backdrop-blur-xl flex items-center justify-center p-6 page-transition">
+        <div class="glass-card w-full max-w-sm p-6">
+            <h3 class="text-xl font-bold mb-4 text-center text-primary">Мої Рекорди 🏆</h3>
+            
+            <div id="historyList" class="space-y-2 mb-6 max-h-60 overflow-y-auto scroll-hidden">
+                </div>
+            
+            <button onclick="closeModal('historyModal')" class="w-full mt-2 text-sm text-gray-500">Закрити</button>
+        </div>
+    </div>
+
     <div id="match3Modal" class="hidden fixed inset-0 z-[70] bg-[#1a0f1f] flex flex-col items-center justify-center p-4">
         <div class="glass-card w-full max-w-sm p-6 text-center">
             <div class="flex justify-between items-center mb-4">
-                <h3 class="text-xl font-bold text-primary">3 в ряд</h3>
-                <div class="text-white text-sm">Очки: <span id="matchScore">0</span>/100</div>
+                <div class="text-left">
+                    <h3 class="text-xl font-bold text-primary">3 в ряд</h3>
+                    <div class="text-xs text-gray-400">Час: <span id="gameTimer" class="text-white font-bold">60</span>с</div>
+                </div>
+                <div class="text-right">
+                    <div class="text-white text-xs text-gray-400">Рекорд: <span id="highScoreDisplay" class="text-primary font-bold">0</span></div>
+                    <div class="text-white text-lg font-bold">🏆 <span id="matchScore">0</span></div>
+                </div>
             </div>
             
-            <div id="gameGrid" class="match-grid mb-6">
+            <div id="gameGrid" class="match-grid mb-4">
                 </div>
 
-            <p id="gameStatus" class="text-sm text-gray-400 mb-4">Знайди пару...</p>
-            <button onclick="closeModal('match3Modal')" class="text-gray-500 text-sm">Вийти</button>
+            <p id="gameStatus" class="text-sm text-gray-400 mb-4 h-6">Знайди пару...</p>
+            <button onclick="closeMatch3()" class="text-gray-500 text-sm">Вийти</button>
         </div>
     </div>
 
@@ -369,10 +401,10 @@
             adminPass: "admin"
         };
 
-        // NEW: Cooldowns in minutes (converted to ms in logic)
+        // LOYAL COOLDOWNS (Minutes)
         const ITEMS = [
-            { id: 1, title: "Кава/Чай", price: 20, icon: "☕", cooldownMinutes: 40 }, // 40 min
-            { id: 2, title: "Поцілунок", price: 30, icon: "💋", cooldownMinutes: 10, multiple: true }, // 10 min + multiple
+            { id: 1, title: "Кава/Чай", price: 20, icon: "☕", cooldownMinutes: 40 }, 
+            { id: 2, title: "Поцілунок", price: 30, icon: "💋", cooldownMinutes: 10, multiple: true }, 
             { id: 3, title: "Обійми (10 хв)", price: 40, icon: "🤗", cooldownMinutes: 120 },
             { id: 4, title: "Масаж ніг", price: 50, icon: "🦶", cooldownMinutes: 1440 },
             { id: 5, title: "Масаж спини", price: 70, icon: "💆‍♀️", cooldownMinutes: 1440 },
@@ -403,7 +435,9 @@
             coins: 500,
             purchases: [],
             easterEggClaimed: false,
-            lastLogin: null
+            lastLogin: null,
+            highScore: 0,
+            gameHistory: [] // [{score: 500, date: "12.02.2024"}]
         };
         
         let els = {};
@@ -582,15 +616,17 @@
                 <div class="flex flex-col space-y-4 page-transition pb-24">
                     <h2 class="text-xl font-bold mb-2 pl-2 text-center">Розваги</h2>
 
-                    <div class="glass-card p-4 flex items-center justify-between active:scale-95 transition-transform" onclick="startMatch3Init()">
-                        <div class="flex items-center gap-4">
+                    <div class="glass-card p-4 flex items-center justify-between active:scale-95 transition-transform">
+                        <div class="flex items-center gap-4 cursor-pointer" onclick="startMatch3Init()">
                             <div class="w-12 h-12 rounded-full bg-gradient-to-tr from-pink-500 to-yellow-500 flex items-center justify-center text-2xl">💎</div>
                             <div class="text-left">
-                                <h3 class="font-bold">3 в ряд</h3>
-                                <p class="text-[10px] text-gray-400">Ціна: 10 🪙 | Виграш: 50 🪙</p>
+                                <h3 class="font-bold">3 в ряд (Аркада)</h3>
+                                <p class="text-[10px] text-gray-400">Ціна: 10 🪙 | 60 секунд</p>
                             </div>
                         </div>
-                        <i class="fas fa-chevron-right text-gray-500"></i>
+                        <button onclick="showScoreHistory()" class="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-primary active:scale-90">
+                            <i class="fas fa-info-circle"></i>
+                        </button>
                     </div>
 
                     <div class="glass-card p-4 flex items-center justify-between active:scale-95 transition-transform" onclick="openMagicBall()">
@@ -618,12 +654,36 @@
             `;
         }
 
-        // --- MATCH 3 LOGIC (REAL) ---
+        // --- IMPROVED MATCH 3 LOGIC (ARCADE MODE) ---
         let board = [];
         let score = 0;
         let selectedCell = null;
+        let gameInterval = null;
+        let gameTime = 60;
+        let isGameActive = false;
+        
         const width = 5;
         const candyColors = ['💎', '❤️', '🍒', '🌟', '🍇'];
+
+        function showScoreHistory() {
+            const list = document.getElementById('historyList');
+            const history = appState.gameHistory || [];
+            
+            if (history.length === 0) {
+                list.innerHTML = `<p class="text-center text-gray-500 text-sm">Ще немає рекордів 🥺</p>`;
+            } else {
+                list.innerHTML = history.sort((a,b) => b.score - a.score).map((h, i) => `
+                    <div class="flex justify-between items-center bg-white/5 p-3 rounded-lg">
+                        <div class="flex items-center gap-2">
+                            <span class="text-yellow-400 font-bold">${i+1}.</span>
+                            <span class="font-bold text-white text-lg">${h.score} 🏆</span>
+                        </div>
+                        <span class="text-xs text-gray-400 font-mono">${h.date}</span>
+                    </div>
+                `).join('');
+            }
+            document.getElementById('historyModal').classList.remove('hidden');
+        }
 
         function startMatch3Init() {
             if (appState.coins < 10) {
@@ -632,11 +692,77 @@
             }
             appState.coins -= 10;
             saveState();
+            updateBalance();
             
             score = 0;
+            gameTime = 60;
+            isGameActive = true;
             document.getElementById('matchScore').innerText = score;
+            document.getElementById('gameTimer').innerText = gameTime;
+            document.getElementById('highScoreDisplay').innerText = appState.highScore || 0;
+            document.getElementById('gameStatus').innerText = "Збери якомога більше!";
+            document.getElementById('gameStatus').className = "text-sm text-gray-400 mb-4 h-6";
+            
             document.getElementById('match3Modal').classList.remove('hidden');
             createBoard();
+            
+            // Timer Loop
+            if (gameInterval) clearInterval(gameInterval);
+            gameInterval = setInterval(() => {
+                gameTime--;
+                document.getElementById('gameTimer').innerText = gameTime;
+                
+                if (gameTime <= 0) {
+                    endGame();
+                }
+            }, 1000);
+        }
+
+        function endGame() {
+            clearInterval(gameInterval);
+            isGameActive = false;
+            
+            // Check win condition
+            if (score >= 100) {
+                const prize = 50;
+                appState.coins += prize;
+                document.getElementById('gameStatus').innerText = `Час вийшов! Виграш: ${prize} 🪙`;
+                document.getElementById('gameStatus').className = "text-sm text-green-400 font-bold mb-4 h-6 animate-pulse";
+                confetti({ particleCount: 200, spread: 80 });
+            } else {
+                document.getElementById('gameStatus').innerText = "Час вийшов! Спробуй ще раз 🥺";
+                document.getElementById('gameStatus').className = "text-sm text-red-400 font-bold mb-4 h-6";
+            }
+            
+            // Save Record
+            if (score >= 100) {
+                if (!appState.gameHistory) appState.gameHistory = [];
+                const now = new Date();
+                
+                // Format: DD.MM HH:MM
+                const pad = (n) => n < 10 ? '0' + n : n;
+                const dateStr = `${pad(now.getDate())}.${pad(now.getMonth()+1)} ${pad(now.getHours())}:${pad(now.getMinutes())}`;
+                
+                appState.gameHistory.push({ score: score, date: dateStr });
+                
+                // Keep top 10
+                appState.gameHistory.sort((a,b) => b.score - a.score);
+                if (appState.gameHistory.length > 10) appState.gameHistory.pop();
+            }
+
+            // Update High Score
+            if (score > (appState.highScore || 0)) {
+                appState.highScore = score;
+            }
+            
+            saveState();
+            updateBalance();
+        }
+
+        function closeMatch3() {
+            clearInterval(gameInterval);
+            isGameActive = false;
+            closeModal('match3Modal');
         }
 
         function createBoard() {
@@ -647,11 +773,17 @@
             for (let i = 0; i < width * width; i++) {
                 const candy = document.createElement('div');
                 candy.setAttribute('id', i);
-                let randomColor = Math.floor(Math.random() * candyColors.length);
-                candy.innerText = candyColors[randomColor];
-                candy.className = 'match-cell';
                 
-                // Click Event
+                let randomColor = candyColors[Math.floor(Math.random() * candyColors.length)];
+                while (
+                    (i >= 2 && board[i-1].innerText === randomColor && board[i-2].innerText === randomColor) ||
+                    (i >= 10 && board[i-5].innerText === randomColor && board[i-10].innerText === randomColor)
+                ) {
+                    randomColor = candyColors[Math.floor(Math.random() * candyColors.length)];
+                }
+
+                candy.innerText = randomColor;
+                candy.className = 'match-cell';
                 candy.addEventListener('click', () => clickCandy(candy));
                 
                 grid.appendChild(candy);
@@ -660,57 +792,103 @@
         }
 
         function clickCandy(cell) {
+            if (!isGameActive) return;
+
             if (!selectedCell) {
                 selectedCell = cell;
                 cell.classList.add('selected');
             } else {
-                let prev = selectedCell;
-                selectedCell.classList.remove('selected');
-                selectedCell = null;
+                if (selectedCell === cell) {
+                    selectedCell.classList.remove('selected');
+                    selectedCell = null;
+                    return;
+                }
+
+                const prevId = parseInt(selectedCell.id);
+                const currId = parseInt(cell.id);
+                const validMoves = [prevId - 1, prevId + 1, prevId - width, prevId + width];
                 
-                // Logic to swap
-                // Simple logic: just swap content and check match
-                let temp = prev.innerText;
-                prev.innerText = cell.innerText;
-                cell.innerText = temp;
+                const isLeftEdge = (prevId % width === 0);
+                const isRightEdge = (prevId % width === width - 1);
                 
-                checkMatches();
+                if (isLeftEdge && currId === prevId - 1) validMoves.pop(); 
+                if (isRightEdge && currId === prevId + 1) validMoves.pop(); 
+
+                if (validMoves.includes(currId)) {
+                    let prev = selectedCell;
+                    selectedCell.classList.remove('selected');
+                    selectedCell = null;
+                    
+                    // Swap visuals
+                    let temp = prev.innerText;
+                    prev.innerText = cell.innerText;
+                    cell.innerText = temp;
+                    
+                    let isMatch = checkMatches();
+                    if (!isMatch) {
+                        prev.classList.add('invalid');
+                        cell.classList.add('invalid');
+                        setTimeout(() => {
+                            // Swap BACK CORRECTLY
+                            let tempBack = prev.innerText;
+                            prev.innerText = cell.innerText;
+                            cell.innerText = tempBack;
+                            
+                            prev.classList.remove('invalid');
+                            cell.classList.remove('invalid');
+                        }, 300);
+                    }
+                } else {
+                    selectedCell.classList.remove('selected');
+                    selectedCell = cell;
+                    cell.classList.add('selected');
+                }
             }
         }
 
         function checkMatches() {
             let matchFound = false;
-            // Row Check
+            
+            // Horizontal
             for (let i = 0; i < 25; i++) {
-                let rowOfThree = [i, i+1, i+2];
-                // Check bounds (5x5 grid)
                 if (i % 5 > 2) continue;
-
+                let rowOfThree = [i, i+1, i+2];
                 let decidedColor = board[i].innerText;
                 if (decidedColor === '') continue;
 
                 if (rowOfThree.every(index => board[index].innerText === decidedColor)) {
-                    score += 10;
-                    document.getElementById('matchScore').innerText = score;
-                    rowOfThree.forEach(index => {
-                        board[index].innerText = ''; // Clear
-                        // Respawn
-                        let randomColor = Math.floor(Math.random() * candyColors.length);
-                        setTimeout(()=> board[index].innerText = candyColors[randomColor], 200);
-                    });
+                    processMatch(rowOfThree);
                     matchFound = true;
                 }
             }
 
-            // Win condition
-            if (score >= 100) {
-                document.getElementById('gameStatus').innerText = "ПЕРЕМОГА! +50 монет!";
-                document.getElementById('gameStatus').classList.add('text-green-400', 'font-bold');
-                confetti({ particleCount: 150, spread: 70 });
-                appState.coins += 50;
-                saveState();
-                score = 0; // Reset to prevent double farming
+            // Vertical
+            for (let i = 0; i < 15; i++) {
+                let colOfThree = [i, i+width, i+width*2];
+                let decidedColor = board[i].innerText;
+                if (decidedColor === '') continue;
+
+                if (colOfThree.every(index => board[index].innerText === decidedColor)) {
+                    processMatch(colOfThree);
+                    matchFound = true;
+                }
             }
+            return matchFound;
+        }
+
+        function processMatch(indices) {
+            score += 10;
+            document.getElementById('matchScore').innerText = score;
+            
+            // Simple Animation & Respawn
+            indices.forEach(index => {
+                board[index].style.transform = "scale(0)";
+                setTimeout(()=> {
+                    let randomColor = candyColors[Math.floor(Math.random() * candyColors.length)];
+                    board[index].innerText = randomColor;
+                    board[index].style.transform = "scale(1)";
+                }, 200);
+            });
         }
 
 
@@ -761,6 +939,7 @@
             if (!isNaN(newCoins)) {
                 appState.coins = newCoins;
                 saveState();
+                updateBalance();
                 showToast("Баланс оновлено! ✅");
                 closeModal('adminModal');
             }
