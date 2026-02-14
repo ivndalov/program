@@ -61,6 +61,9 @@
             -webkit-tap-highlight-color: transparent;
             height: 100vh;
             overflow: hidden;
+            /* Враховуємо Safe Area для нових айфонів */
+            padding-top: env(safe-area-inset-top);
+            padding-bottom: env(safe-area-inset-bottom);
         }
 
         /* Glassmorphism */
@@ -124,6 +127,11 @@
         .shake { animation: shake 0.5s; }
 
         input::placeholder { color: rgba(255,255,255,0.3); }
+        
+        /* Modal Header Fix for iPhone Notch */
+        .modal-header {
+            padding-top: max(2rem, env(safe-area-inset-top));
+        }
     </style>
 </head>
 <body>
@@ -148,7 +156,7 @@
 
     <div id="appScreen" class="hidden h-full flex flex-col">
         
-        <header class="pt-12 pb-4 px-6 flex justify-between items-center glass border-b-0 rounded-b-3xl z-20">
+        <header class="pt-14 pb-4 px-6 flex justify-between items-center glass border-b-0 rounded-b-3xl z-20">
             <div>
                 <h1 class="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-primary to-purple-400">Вітуська</h1>
                 <div class="flex items-center gap-2 text-xs text-gray-300">
@@ -222,17 +230,18 @@
     </div>
 
     <div id="letterModal" class="hidden fixed inset-0 z-[60] bg-[#1a0f1f] flex flex-col page-transition">
-        <div class="p-4 flex justify-between items-center glass">
-            <button onclick="closeModal('letterModal')" class="text-gray-400 hover:text-white"><i class="fas fa-arrow-left text-xl"></i></button>
-            <span class="font-bold text-primary">Для тебе 💌</span>
-            <div class="w-6"></div>
-        </div>
+        <div class="pt-16 pb-4 px-6 flex justify-between items-center glass border-b border-white/10 relative z-50">
+            <button onclick="closeModal('letterModal')" class="text-gray-400 hover:text-white p-2 active:scale-90 transition-transform">
+                <i class="fas fa-arrow-left text-2xl"></i>
+            </button>
+            <span class="font-bold text-primary text-lg">Для тебе 💌</span>
+            <div class="w-8"></div> </div>
+        
         <div id="letterContent" class="flex-1 p-6 overflow-y-auto">
             </div>
     </div>
 
     <script>
-        // --- DATA & CONFIG ---
         const CONFIG = {
             startDate: new Date("2020-11-10T00:00:00"),
             passcode: "10112020",
@@ -266,7 +275,6 @@
             { id: 'love', title: "Хочеш 'Люблю'", icon: "❤️", content: `<h1 class="text-4xl text-center text-primary font-bold animate-pulse">Я ТЕБЕ ЛЮБЛЮ!</h1>` },
         ];
 
-        // --- STATE & VARS ---
         let appState = JSON.parse(localStorage.getItem('ourSpaceData')) || {
             coins: 500,
             purchases: [],
@@ -274,11 +282,9 @@
             lastLogin: null
         };
         
-        let els = {}; // defined in init to avoid null error
+        let els = {};
 
-        // --- INIT ---
         function init() {
-            // Bind DOM elements NOW, when we are sure they exist
             els = {
                 login: document.getElementById('loginScreen'),
                 app: document.getElementById('appScreen'),
@@ -288,17 +294,14 @@
                 error: document.getElementById('errorMsg')
             };
 
-            // Setup listeners
             if (localStorage.getItem('isLoggedIn')) {
                 showApp();
             } else {
-                // Keep auto-check for convenience
                 els.passcode.addEventListener('input', (e) => {
                     if (e.target.value.length === 8) checkPasscodeManual();
                 });
             }
 
-            // Daily bonus check
             const today = new Date().toDateString();
             if (localStorage.getItem('isLoggedIn') && appState.lastLogin !== today) {
                 appState.coins += 100;
@@ -313,32 +316,23 @@
             }
         }
 
-        // --- LOGIN LOGIC ---
         function checkPasscodeManual() {
             const val = document.getElementById('passcode').value;
             if (val === CONFIG.passcode) {
-                // Success
                 document.getElementById('passcode').blur();
                 localStorage.setItem('isLoggedIn', 'true');
-                
-                // Haptic if supported
                 if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
-                
-                // Animation
                 document.getElementById('loginScreen').classList.add('opacity-0');
                 setTimeout(() => {
                     document.getElementById('loginScreen').classList.add('hidden');
                     showApp();
                 }, 500);
             } else {
-                // Error
                 if (navigator.vibrate) navigator.vibrate(500);
                 const input = document.getElementById('passcode');
                 const err = document.getElementById('errorMsg');
-                
                 input.classList.add('shake', 'border-red-500', 'border-2');
                 err.classList.remove('opacity-0');
-                
                 setTimeout(() => {
                     input.classList.remove('shake', 'border-red-500', 'border-2');
                     input.value = '';
@@ -361,17 +355,14 @@
             if(els.balance) els.balance.innerText = appState.coins;
         }
 
-        // --- ROUTING ---
         function router(route) {
             const content = els.content;
             content.innerHTML = '';
-            
             if (route === 'home') renderHome(content);
             if (route === 'store') renderStore(content);
             if (route === 'letters') renderLetters(content);
         }
 
-        // --- RENDERERS ---
         function renderHome(container) {
             container.innerHTML = `
                 <div class="flex flex-col items-center justify-center h-full space-y-8 page-transition">
@@ -441,9 +432,10 @@
                 card.className = `glass-card aspect-square flex flex-col items-center justify-center p-2 text-center transition-all ${isOpened ? 'border-primary/50 bg-primary/10' : 'active:scale-95'}`;
                 card.onclick = () => openLetter(letter);
                 
+                // FIX 2: Always showing title, even if closed
                 card.innerHTML = isOpened 
                     ? `<div class="text-2xl mb-1">${letter.icon}</div><div class="text-[8px] text-gray-300 leading-tight">${letter.title}</div>`
-                    : `<i class="fas fa-envelope text-3xl text-gray-400"></i><div class="text-[8px] text-gray-500 mt-2">Відкрий</div>`;
+                    : `<i class="fas fa-envelope text-3xl text-gray-400 mb-2"></i><div class="text-[8px] text-gray-500 leading-tight">${letter.title}</div>`;
                 
                 grid.appendChild(card);
             });
@@ -452,29 +444,23 @@
             container.appendChild(grid);
         }
 
-        // --- ACTIONS ---
         let timerInterval;
         let timerClicks = 0;
 
         function startTimer() {
             if (timerInterval) clearInterval(timerInterval);
-            
             function update() {
                 const now = new Date();
                 const diff = now - CONFIG.startDate;
-                
                 const days = Math.floor(diff / (1000 * 60 * 60 * 24));
                 const hours = Math.floor((diff / (1000 * 60 * 60)) % 24);
                 const minutes = Math.floor((diff / (1000 * 60)) % 60);
                 const seconds = Math.floor((diff / 1000) % 60);
-
                 const dayEl = document.getElementById('daysCounter');
                 const timeEl = document.getElementById('timeCounter');
-                
                 if (dayEl) dayEl.innerText = days;
                 if (timeEl) timeEl.innerText = `${String(hours).padStart(2, '0')} год ${String(minutes).padStart(2, '0')} хв ${String(seconds).padStart(2, '0')} с`;
             }
-            
             update();
             timerInterval = setInterval(update, 1000);
         }
@@ -513,21 +499,16 @@
 
         function confirmPurchase() {
             if (!selectedItem) return;
-            
             appState.coins -= selectedItem.price;
             appState.purchases.push({ itemId: selectedItem.id, ts: Date.now() });
             saveState();
-            
             closeModal('buyModal');
-            
             const ticketModal = document.getElementById('ticketModal');
             document.getElementById('ticketTitle').innerText = selectedItem.title;
             document.getElementById('ticketId').innerText = `LOVE-${Math.floor(Math.random()*10000)}`;
-            
             const subject = encodeURIComponent(`OurSpace: Вітуська купила ${selectedItem.title}!`);
             const body = encodeURIComponent(`Привіт, Ілля!\n\nЯ щойно купила "${selectedItem.title}" за ${selectedItem.price} монет.\n\nКоли виконаєш? ❤️`);
             document.getElementById('emailLink').href = `mailto:${CONFIG.email}?subject=${subject}&body=${body}`;
-
             ticketModal.classList.remove('hidden');
             confetti({ particleCount: 150, spread: 60 });
         }
@@ -535,19 +516,16 @@
         function openLetter(letter) {
             const modal = document.getElementById('letterModal');
             const content = document.getElementById('letterContent');
-            
             content.innerHTML = `
-                <div class="text-center mb-6">
+                <div class="text-center mb-6 pt-4">
                     <div class="text-6xl mb-4 animate-float">${letter.icon}</div>
                     <h2 class="text-2xl font-bold text-white">${letter.title}</h2>
                 </div>
-                <div class="text-gray-200 leading-relaxed space-y-4">
+                <div class="text-gray-200 leading-relaxed space-y-4 pb-20">
                     ${letter.content}
                 </div>
             `;
-            
             modal.classList.remove('hidden');
-
             if (!appState.openedLetters.includes(letter.id)) {
                 appState.openedLetters.push(letter.id);
                 appState.coins += 25;
@@ -567,9 +545,7 @@
             setTimeout(() => toast.remove(), 3000);
         }
 
-        // STARTUP
         window.onload = init;
-
     </script>
 </body>
 </html>
